@@ -18,6 +18,10 @@ module Fuuka
     LATEST_SK = 'latest'
     INVERTED_INDEX = 'inverted'
 
+    # Skip recording a history entry when the new reading is within this many
+    # meters of the current latest, to avoid cluttering history while stationary.
+    HISTORY_MIN_DISTANCE_M = 2.0
+
     def initialize(table_name:, client: nil, logger: nil)
       @table_name = table_name
       @client = client
@@ -35,7 +39,8 @@ module Fuuka
       Base64.urlsafe_encode64(Digest::SHA256.digest(name), padding: false)
     end
 
-    # Persist a reading as both the user's latest location and a history entry.
+    # Persist a reading as the user's latest location, and also as a history
+    # entry unless it is within HISTORY_MIN_DISTANCE_M of the current latest.
     # `github` is optional user metadata (a GitHub login) mirrored top-level.
     def put_location(name:, location:, github: nil)
       uid = self.class.userid(name)
@@ -45,15 +50,27 @@ module Fuuka
       base = { 'name' => name, 'ts' => timestamp, 'data' => data }
       base['github'] = github if github && !github.empty?
 
-      client.batch_write_item(
-        request_items: {
-          table_name => [
-            { put_request: { item: base.merge('pk' => "latest:#{uid}", 'sk' => LATEST_SK) } },
-            { put_request: { item: base.merge('pk' => "history:#{uid}", 'sk' => "history:#{uid}:#{timestamp}") } },
-          ],
-        }
-      )
+      requests = [
+        { put_request: { item: base.merge('pk' => "latest:#{uid}", 'sk' => LATEST_SK) } },
+      ]
+      unless near_latest?(uid:, location:)
+        requests << { put_request: { item: base.merge('pk' => "history:#{uid}", 'sk' => "history:#{uid}:#{timestamp}") } }
+      end
+
+      client.batch_write_item(request_items: { table_name => requests })
       nil
+    end
+
+    # Current latest reading for a user, or nil if none recorded yet.
+    def latest(uid:)
+      resp = client.get_item(
+        table_name:,
+        key: { 'pk' => "latest:#{uid}", 'sk' => LATEST_SK },
+      )
+      item = resp.item
+      return nil if item.nil? || item.empty?
+
+      Location.from_data(JSON.parse(item.fetch('data')))
     end
 
     # All users' latest locations, via the inverted GSI (sk="latest").
@@ -97,6 +114,17 @@ module Fuuka
         limit:,
       )
       resp.items.map { |item| Location.from_data(JSON.parse(item.fetch('data'))) }
+    end
+
+    private
+
+    # Whether `location` is close enough to the current latest that recording a
+    # new history entry would be redundant.
+    def near_latest?(uid:, location:)
+      current = latest(uid:)
+      return false unless current
+
+      current.distance_to(location) < HISTORY_MIN_DISTANCE_M
     end
   end
 end

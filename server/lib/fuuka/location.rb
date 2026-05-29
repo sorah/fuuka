@@ -23,6 +23,19 @@ module Fuuka
     :source,
     :raw
   ) do
+    EARTH_RADIUS_M = 6_378_137
+
+    # Great-circle distance to another reading, in meters (haversine).
+    def distance_to(other)
+      lat1 = lat * Math::PI / 180
+      lat2 = other.lat * Math::PI / 180
+      dlat = (other.lat - lat) * Math::PI / 180
+      dlon = (other.lon - lon) * Math::PI / 180
+
+      a = (Math.sin(dlat / 2)**2) + (Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dlon / 2)**2))
+      2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a))
+    end
+
     # Hash stored as the `data` JSON blob in DynamoDB.
     def as_data
       {

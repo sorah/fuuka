@@ -48,6 +48,47 @@ RSpec.describe Fuuka::Storage do
       expect(JSON.parse(latest['data'])['lat']).to eq(35.68)
     end
 
+    it 'skips the history item when within 2m of the current latest' do
+      uid = described_class.userid('alice')
+      # Current latest ~1m north of the new reading.
+      current = location.with(lat: location.lat + 0.000009)
+      client.stub_responses(:get_item, {
+        item: { 'pk' => "latest:#{uid}", 'sk' => 'latest', 'data' => JSON.generate(current.as_data) },
+      })
+
+      captured = nil
+      client.stub_responses(:batch_write_item, lambda { |ctx|
+        captured = ctx.params
+        {}
+      })
+
+      storage.put_location(name: 'alice', location:)
+
+      requests = captured[:request_items]['fuuka-test']
+      sks = requests.map { |r| r[:put_request][:item]['sk'][:s] }
+      expect(sks).to eq(['latest'])
+    end
+
+    it 'writes the history item when the current latest is far away' do
+      uid = described_class.userid('alice')
+      far = location.with(lat: location.lat + 0.001) # ~100m
+      client.stub_responses(:get_item, {
+        item: { 'pk' => "latest:#{uid}", 'sk' => 'latest', 'data' => JSON.generate(far.as_data) },
+      })
+
+      captured = nil
+      client.stub_responses(:batch_write_item, lambda { |ctx|
+        captured = ctx.params
+        {}
+      })
+
+      storage.put_location(name: 'alice', location:)
+
+      requests = captured[:request_items]['fuuka-test']
+      sks = requests.map { |r| r[:put_request][:item]['sk'][:s] }
+      expect(sks).to contain_exactly('latest', "history:#{uid}:2026-05-29T10:30:00Z")
+    end
+
     it 'omits github when not given' do
       captured = nil
       client.stub_responses(:batch_write_item, lambda { |ctx|
