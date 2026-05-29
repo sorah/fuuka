@@ -76,12 +76,14 @@ export default function Home() {
         : [...config.hidden, userid],
     });
 
-  const toggleSolo = (userid: string) =>
-    updateConfig({
-      solo: config.solo.includes(userid)
-        ? config.solo.filter((id) => id !== userid)
-        : [...config.solo, userid],
-    });
+  const toggleSolo = (userid: string) => {
+    const nextSolo = config.solo.includes(userid)
+      ? config.solo.filter((id) => id !== userid)
+      : [...config.solo, userid];
+    // Re-engage tracking when entering solo, so the focused user is framed.
+    const startingSolo = config.solo.length === 0 && nextSolo.length > 0;
+    updateConfig(startingSolo ? { solo: nextSolo, tracking: true } : { solo: nextSolo });
+  };
 
   return (
     <>
