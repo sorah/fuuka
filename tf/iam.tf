@@ -29,6 +29,7 @@ data "aws_iam_policy_document" "Lambda-dynamodb" {
   statement {
     effect = "Allow"
     actions = [
+      "dynamodb:GetItem",
       "dynamodb:Query",
       "dynamodb:PutItem",
       "dynamodb:BatchWriteItem",
