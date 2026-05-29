@@ -389,6 +389,42 @@ body {
   cursor: help;
 }
 
+/* Initial-load indicator: shown only before the first /api/locations response,
+   when there is no stale data to display yet. */
+.fuuka-loading {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1559b8;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #1d6fe0;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.fuuka-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(29, 111, 224, 0.3);
+  border-top-color: #1d6fe0;
+  border-radius: 50%;
+  animation: fuuka-spin 0.7s linear infinite;
+}
+
+@keyframes fuuka-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* FlightRadar24-style detail pane, stacked below the users pane on desktop and
    docked to the bottom of the screen on mobile. */
 .fuuka-detail {

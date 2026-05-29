@@ -20,6 +20,7 @@ export function meta() {
 export default function Home() {
   const [config, updateConfig] = useViewConfig();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [framed, setFramed] = useState(false);
   const visible = usePageVisible();
 
   const { data: mapConfig, error: configError } = useSWR<ConfigResponse>(
@@ -102,6 +103,7 @@ export default function Home() {
         }
         onSelect={setSelectedId}
         detailOpen={selectedUser !== null}
+        onInitialFit={() => setFramed(true)}
       />
       <div className="fuuka-panes">
         <ControlPane
@@ -132,6 +134,11 @@ export default function Home() {
           />
         )}
       </div>
+      {!locationsError && !framed && (!locations || users.length > 0) && (
+        <div className="fuuka-loading" role="status">
+          <span className="fuuka-spinner" aria-hidden="true" /> Loading locations…
+        </div>
+      )}
       {reloadError && (
         <div
           className="fuuka-warning"

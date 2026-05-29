@@ -33,6 +33,8 @@ type LocationMapProps = {
   detailOpen: boolean;
   onManualInteraction: () => void;
   onSelect: (userid: string | null) => void;
+  // Fired once, when the map first frames the active users.
+  onInitialFit?: () => void;
 };
 
 type Padding = { top: number; right: number; bottom: number; left: number };
@@ -137,8 +139,10 @@ export function LocationMap({
   detailOpen,
   onManualInteraction,
   onSelect,
+  onInitialFit,
 }: LocationMapProps) {
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef<MapRef>(null);
   const wasTracking = useRef(false);
   const didInitialFit = useRef(false);
@@ -212,6 +216,7 @@ export function LocationMap({
     const justEngaged = initialFit || membersChanged || !wasTracking.current;
     didInitialFit.current = true;
     wasTracking.current = tracking;
+    if (initialFit) onInitialFit?.();
     if (
       !justEngaged &&
       spanFitsView(map, maxLon - minLon, maxLat - minLat, padding)
@@ -234,8 +239,11 @@ export function LocationMap({
     );
     // fitKey captures position changes; depending on it keeps the view following.
     // detailOpen changes the panes' footprint, so re-frame when it toggles.
+    // mapLoaded retriggers the initial fit when the map becomes ready after the
+    // data already arrived (otherwise a stationary user's fitKey never changes,
+    // so the one early-bailed run would never retry).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tracking, fitKey, detailOpen]);
+  }, [tracking, fitKey, detailOpen, mapLoaded]);
 
   return (
     <Map
@@ -245,6 +253,7 @@ export function LocationMap({
       onZoom={(e) => setZoom(e.viewState.zoom)}
       mapStyle="mapbox://styles/mapbox/streets-v12"
       style={{ position: "absolute", inset: 0 }}
+      onLoad={() => setMapLoaded(true)}
       onClick={() => onSelect(null)}
       onDragStart={(e) => {
         // Unlock tracking only when the user pans (drag), not on zoom.
