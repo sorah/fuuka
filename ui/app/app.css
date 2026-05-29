@@ -158,8 +158,13 @@ body {
   font-weight: 700;
 }
 
+/* While collapsed the pill is the only control on screen, so give it a
+   comfortable tap target instead of the dense desktop button sizing. */
 .fuuka-control--collapsed .fuuka-control-collapse {
   margin: 0;
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  min-height: 44px;
 }
 
 .fuuka-control-header {
@@ -528,13 +533,5 @@ body {
     width: auto;
     max-height: 60vh;
     border-radius: 12px 12px 0 0;
-  }
-
-  /* The collapsed pill is the only tap target while collapsed — give it a
-     comfortable touch size instead of the dense desktop button sizing. */
-  .fuuka-control--collapsed .fuuka-control-collapse {
-    font-size: 0.95rem;
-    padding: 10px 16px;
-    min-height: 44px;
   }
 }
