@@ -1,13 +1,16 @@
-import { useState } from "react";
-
 import { HistoryChart } from "~/components/HistoryChart";
-import type { UserLocation } from "~/lib/api";
-import { useUserHistory } from "~/lib/history";
+import type { HistoryPoint, UserLocation } from "~/lib/api";
 import { isStale } from "~/lib/time";
 
 type DetailPaneProps = {
   user: UserLocation;
   soloed: boolean;
+  historyOpen: boolean;
+  onToggleHistory: () => void;
+  historyPoints: HistoryPoint[];
+  historyLoading: boolean;
+  rangeMs: number;
+  onRangeChange: (ms: number) => void;
   onClose: () => void;
   onHide: (userid: string) => void;
   onToggleSolo: (userid: string) => void;
@@ -51,14 +54,17 @@ function metrics(user: UserLocation): Metric[] {
 export function DetailPane({
   user,
   soloed,
+  historyOpen,
+  onToggleHistory,
+  historyPoints,
+  historyLoading,
+  rangeMs,
+  onRangeChange,
   onClose,
   onHide,
   onToggleSolo,
 }: DetailPaneProps) {
   const stale = isStale(user.timestamp);
-  const [chartOpen, setChartOpen] = useState(false);
-  // Only fetch history while the chart is expanded.
-  const history = useUserHistory(chartOpen ? user.userid : null);
 
   return (
     <div className="fuuka-detail">
@@ -111,16 +117,21 @@ export function DetailPane({
       <button
         type="button"
         className="fuuka-detail-chart-toggle"
-        aria-expanded={chartOpen}
-        onClick={() => setChartOpen((open) => !open)}
+        aria-expanded={historyOpen}
+        onClick={onToggleHistory}
       >
-        <span className={`fuuka-detail-chart-caret${chartOpen ? " open" : ""}`}>
+        <span className={`fuuka-detail-chart-caret${historyOpen ? " open" : ""}`}>
           ▸
         </span>
         Altitude / speed history
       </button>
-      {chartOpen && (
-        <HistoryChart points={history.points} isLoading={history.isLoading} />
+      {historyOpen && (
+        <HistoryChart
+          points={historyPoints}
+          isLoading={historyLoading}
+          rangeMs={rangeMs}
+          onRangeChange={onRangeChange}
+        />
       )}
 
       <dl className="fuuka-detail-list">

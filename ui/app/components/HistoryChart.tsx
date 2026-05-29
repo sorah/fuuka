@@ -1,23 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
 import type { HistoryPoint } from "~/lib/api";
+import { RANGES } from "~/lib/history";
 import { speedColor, speedKmh } from "~/lib/speed";
 
 const CHART_HEIGHT = 120;
-
-const MINUTE = 60_000;
-const RANGES: { label: string; ms: number }[] = [
-  { label: "15m", ms: 15 * MINUTE },
-  { label: "1h", ms: 60 * MINUTE },
-  { label: "2h", ms: 120 * MINUTE },
-  { label: "4h", ms: 240 * MINUTE },
-  { label: "6h", ms: 360 * MINUTE },
-  { label: "12h", ms: 720 * MINUTE },
-  { label: "1d", ms: 1440 * MINUTE },
-];
-const DEFAULT_RANGE_MS = 60 * MINUTE;
 
 const ALT_STROKE = "#2e7d32";
 const ALT_FILL = "rgba(46, 125, 50, 0.18)";
@@ -153,29 +142,26 @@ function Chart({ points }: { points: HistoryPoint[] }) {
 }
 
 type HistoryChartProps = {
+  // Points already trimmed to the selected range by the owner.
   points: HistoryPoint[];
   isLoading: boolean;
+  rangeMs: number;
+  onRangeChange: (ms: number) => void;
 };
 
-export function HistoryChart({ points, isLoading }: HistoryChartProps) {
-  const [rangeMs, setRangeMs] = useState(DEFAULT_RANGE_MS);
-
-  // Anchor the window on the newest reading rather than wall-clock now, so the
-  // selected range always ends at real data even when the feed is stale.
-  const filtered = useMemo(() => {
-    if (points.length === 0) return points;
-    const newest = Date.parse(points[points.length - 1].timestamp);
-    const cutoff = newest - rangeMs;
-    return points.filter((p) => Date.parse(p.timestamp) >= cutoff);
-  }, [points, rangeMs]);
-
+export function HistoryChart({
+  points,
+  isLoading,
+  rangeMs,
+  onRangeChange,
+}: HistoryChartProps) {
   let body;
   if (isLoading) {
     body = <div className="fuuka-detail-chart-empty">Loading…</div>;
-  } else if (filtered.length < 2) {
+  } else if (points.length < 2) {
     body = <div className="fuuka-detail-chart-empty">No history in range</div>;
   } else {
-    body = <Chart points={filtered} />;
+    body = <Chart points={points} />;
   }
 
   return (
@@ -186,7 +172,7 @@ export function HistoryChart({ points, isLoading }: HistoryChartProps) {
             key={r.label}
             type="button"
             className={r.ms === rangeMs ? "active" : ""}
-            onClick={() => setRangeMs(r.ms)}
+            onClick={() => onRangeChange(r.ms)}
           >
             {r.label}
           </button>

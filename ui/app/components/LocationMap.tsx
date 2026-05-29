@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Map, { Layer, Marker, Source } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
-import type { FillLayerSpecification } from "mapbox-gl";
+import type { FillLayerSpecification, LineLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import type { UserLocation } from "~/lib/api";
-import { accuracyCircles } from "~/lib/geo";
+import type { HistoryPoint, UserLocation } from "~/lib/api";
+import { accuracyCircles, trackSegments } from "~/lib/geo";
 import { speedColor } from "~/lib/speed";
 import { isStale } from "~/lib/time";
 
@@ -19,6 +19,24 @@ const ACCURACY_LAYER: FillLayerSpecification = {
   },
 };
 
+// White casing under the colored track, FR24-style, so it stays legible over
+// any basemap; the colored line above is data-driven by per-segment speed.
+const TRACK_CASING_LAYER: LineLayerSpecification = {
+  id: "track-casing",
+  type: "line",
+  source: "track",
+  layout: { "line-cap": "round", "line-join": "round" },
+  paint: { "line-color": "#fff", "line-width": 5, "line-opacity": 0.7 },
+};
+
+const TRACK_LAYER: LineLayerSpecification = {
+  id: "track",
+  type: "line",
+  source: "track",
+  layout: { "line-cap": "round", "line-join": "round" },
+  paint: { "line-color": ["get", "color"], "line-width": 3 },
+};
+
 export type RenderUser = {
   user: UserLocation;
   dimmed: boolean;
@@ -28,6 +46,8 @@ type LocationMapProps = {
   token: string;
   users: RenderUser[];
   fitUsers: UserLocation[];
+  // History trail of the selected user, drawn as a speed-colored line.
+  track: HistoryPoint[];
   tracking: boolean;
   selectedId: string | null;
   detailOpen: boolean;
@@ -134,6 +154,7 @@ export function LocationMap({
   token,
   users,
   fitUsers,
+  track,
   tracking,
   selectedId,
   detailOpen,
@@ -155,6 +176,7 @@ export function LocationMap({
     [users],
   );
   const circles = useMemo(() => accuracyCircles(undimmed), [undimmed]);
+  const trackData = useMemo(() => trackSegments(track), [track]);
 
   // Key changes whenever the tracked set or their (rounded) positions move.
   const fitKey = useMemo(
@@ -264,6 +286,11 @@ export function LocationMap({
     >
       <Source id="accuracy" type="geojson" data={circles}>
         <Layer {...ACCURACY_LAYER} />
+      </Source>
+
+      <Source id="track" type="geojson" data={trackData}>
+        <Layer {...TRACK_CASING_LAYER} />
+        <Layer {...TRACK_LAYER} />
       </Source>
 
       {users.map(({ user, dimmed }) => {

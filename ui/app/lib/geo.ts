@@ -1,4 +1,7 @@
-import type { Feature, FeatureCollection, Polygon } from "geojson";
+import type { Feature, FeatureCollection, LineString, Polygon } from "geojson";
+
+import type { HistoryPoint } from "~/lib/api";
+import { speedColor } from "~/lib/speed";
 
 const EARTH_RADIUS_M = 6_378_137;
 
@@ -37,4 +40,31 @@ export function accuracyCircles(
       .filter((p) => p.accuracy && p.accuracy > 0)
       .map((p) => circlePolygon(p.longitude, p.latitude, p.accuracy as number)),
   };
+}
+
+// One LineString per consecutive pair of readings, each carrying a `color`
+// derived from the segment's mean speed, so the track gradates like a
+// FlightRadar24 trail (blue→red with speed) via a data-driven line-color.
+export function trackSegments(points: HistoryPoint[]): FeatureCollection<LineString> {
+  const features: Feature<LineString>[] = [];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1];
+    const b = points[i];
+    const speeds = [a.speed, b.speed].filter((s): s is number => s !== null);
+    const speed = speeds.length
+      ? speeds.reduce((sum, s) => sum + s, 0) / speeds.length
+      : null;
+    features.push({
+      type: "Feature",
+      properties: { color: speedColor(speed) },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [a.longitude, a.latitude],
+          [b.longitude, b.latitude],
+        ],
+      },
+    });
+  }
+  return { type: "FeatureCollection", features };
 }

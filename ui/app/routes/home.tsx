@@ -11,6 +11,11 @@ import {
   fetcher,
 } from "~/lib/api";
 import { useViewConfig } from "~/lib/config";
+import {
+  DEFAULT_RANGE_MS,
+  filterHistoryByRange,
+  useUserHistory,
+} from "~/lib/history";
 import { usePageVisible } from "~/lib/visibility";
 import { useWakeLock } from "~/lib/wakeLock";
 
@@ -22,8 +27,18 @@ export default function Home() {
   const [config, updateConfig] = useViewConfig();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [framed, setFramed] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [rangeMs, setRangeMs] = useState(DEFAULT_RANGE_MS);
   const visible = usePageVisible();
   const wakeLock = useWakeLock();
+
+  // History of the selected user: the recent tail always loads (drives the
+  // default track); the 24h baseline only loads once the chart is expanded.
+  const history = useUserHistory(selectedId, { day: historyOpen });
+  const trackPoints = useMemo(
+    () => filterHistoryByRange(history.points, rangeMs),
+    [history.points, rangeMs],
+  );
 
   const { data: mapConfig, error: configError } = useSWR<ConfigResponse>(
     "/api/config",
@@ -98,6 +113,7 @@ export default function Home() {
         token={mapConfig.mapboxToken}
         users={renderList}
         fitUsers={fitUsers}
+        track={selectedUser ? trackPoints : []}
         tracking={config.tracking}
         selectedId={selectedId}
         onManualInteraction={() => {
@@ -132,6 +148,12 @@ export default function Home() {
           <DetailPane
             user={selectedUser}
             soloed={config.solo.includes(selectedUser.userid)}
+            historyOpen={historyOpen}
+            onToggleHistory={() => setHistoryOpen((open) => !open)}
+            historyPoints={trackPoints}
+            historyLoading={history.isLoading}
+            rangeMs={rangeMs}
+            onRangeChange={setRangeMs}
             onClose={() => setSelectedId(null)}
             onHide={(userid) => {
               toggleHidden(userid);
