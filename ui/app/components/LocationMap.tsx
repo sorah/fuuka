@@ -142,6 +142,7 @@ export function LocationMap({
   const mapRef = useRef<MapRef>(null);
   const wasTracking = useRef(false);
   const didInitialFit = useRef(false);
+  const prevMembers = useRef("");
 
   const icon = iconScale(zoom);
 
@@ -167,6 +168,15 @@ export function LocationMap({
       wasTracking.current = tracking;
       return;
     }
+
+    // Detect when the followed set itself changes (show/hide/solo), as opposed
+    // to its members merely moving — a membership change warrants re-zooming.
+    const membersKey = fitUsers
+      .map((u) => u.userid)
+      .sort()
+      .join("|");
+    const membersChanged = membersKey !== prevMembers.current;
+    prevMembers.current = membersKey;
 
     // Even when not following (e.g. ?track=0), frame all active users once on
     // the first view so the map opens on something useful.
@@ -196,9 +206,10 @@ export function LocationMap({
     const padding = paddingForPanes();
 
     // Keep the focused users centered as they move, but hold the current zoom
-    // as long as they still fit. Only (re-)pick a zoom when follow is first
-    // engaged, on the one-shot initial fit, or when they no longer fit.
-    const justEngaged = initialFit || !wasTracking.current;
+    // as long as they still fit. Re-pick a zoom when follow is first engaged,
+    // on the one-shot initial fit, when the followed set changes, or when they
+    // no longer fit.
+    const justEngaged = initialFit || membersChanged || !wasTracking.current;
     didInitialFit.current = true;
     wasTracking.current = tracking;
     if (
