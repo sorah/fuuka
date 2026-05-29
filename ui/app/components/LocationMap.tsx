@@ -40,6 +40,11 @@ type Padding = { top: number; right: number; bottom: number; left: number };
 // Inset the camera by however much the floating panes cover, so followed users
 // are framed in the visible area rather than hidden behind the panes. The panes
 // are fixed-positioned, so their viewport rects map directly to map padding.
+//
+// We measure the actual pane elements (not their container, which reserves a
+// fixed-width column even when the pane is collapsed) and ignore the axis a
+// pane spans fully — e.g. the mobile bottom sheet is full width, so it only
+// contributes bottom padding, never left/right.
 function paddingForPanes(): Padding {
   const base = 60;
   const pad: Padding = { top: base, right: base, bottom: base, left: base };
@@ -47,19 +52,43 @@ function paddingForPanes(): Padding {
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  for (const sel of [".fuuka-panes", ".fuuka-detail"]) {
+  const EDGE = 40;
+  for (const sel of [".fuuka-control", ".fuuka-detail"]) {
     const el = document.querySelector(sel);
     if (!el) continue;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
-    // Add the covered span on whichever edge the pane hugs.
-    if (vw - r.right < r.left && vw - r.right < 40) {
-      pad.right = Math.max(pad.right, vw - r.left + 12);
+
+    // A pane spanning most of an axis is a bar on the cross axis, not a side
+    // pane — don't let it contribute padding on the axis it spans.
+    const spansWidth = r.width > vw * 0.7;
+    const spansHeight = r.height > vh * 0.7;
+    if (!spansWidth) {
+      if (vw - r.right < EDGE && vw - r.right < r.left) {
+        pad.right = Math.max(pad.right, vw - r.left + 12);
+      } else if (r.left < EDGE) {
+        pad.left = Math.max(pad.left, r.right + 12);
+      }
     }
-    if (vh - r.bottom < r.top && vh - r.bottom < 40) {
-      pad.bottom = Math.max(pad.bottom, vh - r.top + 12);
+    if (!spansHeight) {
+      if (vh - r.bottom < EDGE && vh - r.bottom < r.top) {
+        pad.bottom = Math.max(pad.bottom, vh - r.top + 12);
+      } else if (r.top < EDGE) {
+        pad.top = Math.max(pad.top, r.bottom + 12);
+      }
     }
   }
+
+  // Never crush the usable area to a sliver. A side pane on a narrow portrait
+  // screen eats a big fraction of the width, so cap horizontal padding harder
+  // in portrait; cap vertical padding harder in landscape (bottom sheets).
+  const portrait = vh >= vw;
+  const maxLat = vw * (portrait ? 0.3 : 0.5);
+  const maxVert = vh * (portrait ? 0.5 : 0.35);
+  pad.left = Math.min(pad.left, maxLat);
+  pad.right = Math.min(pad.right, maxLat);
+  pad.top = Math.min(pad.top, maxVert);
+  pad.bottom = Math.min(pad.bottom, maxVert);
   return pad;
 }
 
