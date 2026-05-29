@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { UserLocation } from "~/lib/api";
 import type { SoloMode, ViewConfig } from "~/lib/config";
+import { speedColor, speedKmh } from "~/lib/speed";
 import { formatRelative, isStale } from "~/lib/time";
 
 type ControlPaneProps = {
@@ -112,6 +113,7 @@ export function ControlPane({
           const visible = !config.hidden.includes(user.userid);
           const soloed = config.solo.includes(user.userid);
           const stale = isStale(user.timestamp);
+          const kmh = speedKmh(user.speed);
           return (
             <li key={user.userid} className="fuuka-control-item">
               <label className="fuuka-control-user">
@@ -121,8 +123,19 @@ export function ControlPane({
                   onChange={() => onToggleHidden(user.userid)}
                 />
                 <span className="fuuka-control-name">{user.name}</span>
-                <span className={`fuuka-control-time${stale ? " stale" : ""}`}>
-                  {formatRelative(user.timestamp)}
+                <span className="fuuka-control-meta">
+                  {kmh !== null && kmh >= 1 && (
+                    <span
+                      className="fuuka-control-speed"
+                      style={{ background: speedColor(user.speed) }}
+                      title={`${kmh.toFixed(0)} km/h`}
+                    >
+                      {kmh.toFixed(0)}
+                    </span>
+                  )}
+                  <span className={`fuuka-control-time${stale ? " stale" : ""}`}>
+                    {formatRelative(user.timestamp)}
+                  </span>
                 </span>
               </label>
               <button

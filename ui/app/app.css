@@ -271,8 +271,15 @@ body {
   white-space: nowrap;
 }
 
-.fuuka-control-time {
+.fuuka-control-meta {
   margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.fuuka-control-time {
   color: #777;
   font-size: 0.72rem;
   white-space: nowrap;
@@ -281,6 +288,19 @@ body {
 .fuuka-control-time.stale {
   color: #e0341d;
   font-weight: 600;
+}
+
+/* Speed pill, colored like the matching map marker (blue→red by speed). */
+.fuuka-control-speed {
+  flex: none;
+  min-width: 1.6rem;
+  text-align: center;
+  padding: 1px 4px;
+  border-radius: 8px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
 }
 
 .fuuka-solo-button {
