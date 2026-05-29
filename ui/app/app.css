@@ -123,6 +123,11 @@ body {
   width: auto;
 }
 
+.fuuka-control-title {
+  font-weight: 700;
+  margin-right: auto;
+}
+
 .fuuka-control-collapse {
   font-weight: 700;
 }

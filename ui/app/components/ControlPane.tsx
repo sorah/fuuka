@@ -53,22 +53,23 @@ export function ControlPane({
   return (
     <div className="fuuka-control">
       <div className="fuuka-control-header">
+        <span className="fuuka-control-title">Users ({users.length})</span>
+        <div className="fuuka-control-actions">
+          <button type="button" onClick={onSelectAll}>
+            All
+          </button>
+          <button type="button" onClick={onUnselectAll}>
+            None
+          </button>
+        </div>
         <button
           type="button"
           className="fuuka-control-collapse"
           onClick={() => setCollapsed(true)}
           title="Collapse"
         >
-          Users ({users.length}) ▾
+          ▾
         </button>
-        <div className="fuuka-control-actions">
-          <button type="button" onClick={onSelectAll}>
-            Select all
-          </button>
-          <button type="button" onClick={onUnselectAll}>
-            Unselect all
-          </button>
-        </div>
       </div>
 
       <label className="fuuka-control-row fuuka-control-toggle">
