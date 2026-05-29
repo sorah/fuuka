@@ -141,6 +141,7 @@ export function LocationMap({
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
   const mapRef = useRef<MapRef>(null);
   const wasTracking = useRef(false);
+  const didInitialFit = useRef(false);
 
   const icon = iconScale(zoom);
 
@@ -161,12 +162,19 @@ export function LocationMap({
   );
 
   useEffect(() => {
-    if (!tracking || fitUsers.length === 0) {
+    const map = mapRef.current;
+    if (!map || fitUsers.length === 0) {
       wasTracking.current = tracking;
       return;
     }
-    const map = mapRef.current;
-    if (!map) return;
+
+    // Even when not following (e.g. ?track=0), frame all active users once on
+    // the first view so the map opens on something useful.
+    const initialFit = !didInitialFit.current;
+    if (!tracking && !initialFit) {
+      wasTracking.current = false;
+      return;
+    }
 
     let minLon = Infinity;
     let minLat = Infinity;
@@ -189,9 +197,10 @@ export function LocationMap({
 
     // Keep the focused users centered as they move, but hold the current zoom
     // as long as they still fit. Only (re-)pick a zoom when follow is first
-    // engaged or they no longer fit the viewport.
-    const justEngaged = !wasTracking.current;
-    wasTracking.current = true;
+    // engaged, on the one-shot initial fit, or when they no longer fit.
+    const justEngaged = initialFit || !wasTracking.current;
+    didInitialFit.current = true;
+    wasTracking.current = tracking;
     if (
       !justEngaged &&
       spanFitsView(map, maxLon - minLon, maxLat - minLat, padding)
