@@ -107,6 +107,8 @@ export default function Home() {
         <ControlPane
           users={users}
           config={config}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
           onToggleHidden={toggleHidden}
           onSelectAll={() => updateConfig({ hidden: [] })}
           onUnselectAll={() => updateConfig({ hidden: users.map((u) => u.userid) })}

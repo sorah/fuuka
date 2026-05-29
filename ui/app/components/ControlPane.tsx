@@ -8,6 +8,7 @@ import { formatRelative, isStale } from "~/lib/time";
 type ControlPaneProps = {
   users: UserLocation[];
   config: ViewConfig;
+  selectedId: string | null;
   onToggleHidden: (userid: string) => void;
   onSelectAll: () => void;
   onUnselectAll: () => void;
@@ -15,11 +16,13 @@ type ControlPaneProps = {
   onClearSolo: () => void;
   onSetTracking: (tracking: boolean) => void;
   onSetSoloMode: (mode: SoloMode) => void;
+  onSelect: (userid: string) => void;
 };
 
 export function ControlPane({
   users,
   config,
+  selectedId,
   onToggleHidden,
   onSelectAll,
   onUnselectAll,
@@ -27,6 +30,7 @@ export function ControlPane({
   onClearSolo,
   onSetTracking,
   onSetSoloMode,
+  onSelect,
 }: ControlPaneProps) {
   const soloActive = config.solo.length > 0;
   // Default collapsed on small screens.
@@ -112,16 +116,26 @@ export function ControlPane({
         {users.map((user) => {
           const visible = !config.hidden.includes(user.userid);
           const soloed = config.solo.includes(user.userid);
+          const selected = user.userid === selectedId;
           const stale = isStale(user.timestamp);
           const kmh = speedKmh(user.speed);
           return (
-            <li key={user.userid} className="fuuka-control-item">
-              <label className="fuuka-control-user">
-                <input
-                  type="checkbox"
-                  checked={visible}
-                  onChange={() => onToggleHidden(user.userid)}
-                />
+            <li
+              key={user.userid}
+              className={`fuuka-control-item${selected ? " selected" : ""}`}
+            >
+              <input
+                type="checkbox"
+                className="fuuka-control-check"
+                checked={visible}
+                onChange={() => onToggleHidden(user.userid)}
+                title={visible ? "Hide" : "Show"}
+              />
+              <button
+                type="button"
+                className="fuuka-control-user"
+                onClick={() => onSelect(user.userid)}
+              >
                 <span className="fuuka-control-name">{user.name}</span>
                 <span className="fuuka-control-meta">
                   {kmh !== null && kmh >= 1 && (
@@ -137,7 +151,7 @@ export function ControlPane({
                     {formatRelative(user.timestamp)}
                   </span>
                 </span>
-              </label>
+              </button>
               <button
                 type="button"
                 className={`fuuka-solo-button${soloed ? " active" : ""}`}
