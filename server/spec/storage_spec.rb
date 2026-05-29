@@ -103,6 +103,62 @@ RSpec.describe Fuuka::Storage do
     end
   end
 
+  describe '#history' do
+    it 'queries the user partition from the since lower bound and parses items oldest-first' do
+      uid = described_class.userid('alice')
+      captured = nil
+      client.stub_responses(:query, lambda { |ctx|
+        captured = ctx.params
+        {
+          items: [
+            { 'pk' => "history:#{uid}", 'sk' => "history:#{uid}:2026-05-29T10:30:00Z",
+              'data' => JSON.generate(location.as_data) },
+          ],
+          last_evaluated_key: nil,
+        }
+      })
+
+      result = storage.history(uid:, since: '2026-05-29T10:00:00Z')
+
+      expect(captured[:key_condition_expression]).to eq('pk = :pk AND sk >= :start')
+      # The stubbed client marshals attribute values into { s: "..." } form.
+      expect(captured[:expression_attribute_values].transform_values { |v| v[:s] }).to eq(
+        ':pk' => "history:#{uid}",
+        ':start' => "history:#{uid}:2026-05-29T10:00:00Z"
+      )
+      expect(result.map(&:lat)).to eq([35.68])
+    end
+
+    it 'defaults to the whole partition when no since is given' do
+      uid = described_class.userid('alice')
+      captured = nil
+      client.stub_responses(:query, lambda { |ctx|
+        captured = ctx.params
+        { items: [], last_evaluated_key: nil }
+      })
+
+      storage.history(uid:)
+
+      expect(captured[:expression_attribute_values][':start'][:s]).to eq("history:#{uid}:")
+    end
+
+    it 'follows pagination across pages' do
+      uid = described_class.userid('alice')
+      page = 0
+      client.stub_responses(:query, lambda { |_ctx|
+        page += 1
+        if page == 1
+          { items: [{ 'data' => JSON.generate(location.as_data) }], last_evaluated_key: { 'pk' => 'x' } }
+        else
+          { items: [{ 'data' => JSON.generate(location.with(lat: 40.0).as_data) }], last_evaluated_key: nil }
+        end
+      })
+
+      result = storage.history(uid:)
+      expect(result.map(&:lat)).to eq([35.68, 40.0])
+    end
+  end
+
   describe '#all_latest' do
     it 'queries the inverted index and parses items' do
       uid = described_class.userid('alice')

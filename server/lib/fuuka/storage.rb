@@ -101,19 +101,29 @@ module Fuuka
       end
     end
 
-    # Historical readings for a user, oldest first.
-    def history(name:, limit: 100)
-      uid = self.class.userid(name)
-      resp = client.query(
-        table_name:,
-        key_condition_expression: 'pk = :pk AND begins_with(sk, :prefix)',
-        expression_attribute_values: {
-          ':pk' => "history:#{uid}",
-          ':prefix' => "history:#{uid}:",
-        },
-        limit:,
-      )
-      resp.items.map { |item| Location.from_data(JSON.parse(item.fetch('data'))) }
+    # Historical readings for a user (by uid), oldest first. `since` is an
+    # ISO8601 string lower bound; when given, only readings at or after it are
+    # returned. Paginates to gather the full range.
+    def history(uid:, since: nil)
+      start_sk = since ? "history:#{uid}:#{since}" : "history:#{uid}:"
+      items = []
+      last_key = nil
+      loop do
+        resp = client.query(
+          table_name:,
+          key_condition_expression: 'pk = :pk AND sk >= :start',
+          expression_attribute_values: {
+            ':pk' => "history:#{uid}",
+            ':start' => start_sk,
+          },
+          exclusive_start_key: last_key,
+        )
+        items.concat(resp.items)
+        last_key = resp.last_evaluated_key
+        break unless last_key
+      end
+
+      items.map { |item| Location.from_data(JSON.parse(item.fetch('data'))) }
     end
 
     private

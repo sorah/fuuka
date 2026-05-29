@@ -23,6 +23,14 @@ export type ConfigResponse = {
   mapboxToken: string;
 };
 
+// A single historical reading, without the repeated user identity fields.
+export type HistoryPoint = Omit<UserLocation, "userid" | "name" | "github">;
+
+export type HistoryResponse = {
+  userid: string;
+  points: HistoryPoint[];
+};
+
 export async function fetcher<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {

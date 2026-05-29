@@ -43,6 +43,42 @@ RSpec.describe Fuuka::App do
     end
   end
 
+  describe 'GET /api/history/:userid/day' do
+    let(:location) do
+      Fuuka::Location.new(
+        lat: 1.0, lon: 2.0, timestamp: '2026-05-29T10:30:00Z', battery: 50,
+        battery_state: 'unplugged', speed: 1.5, altitude: 30.0, accuracy: 3.0,
+        vertical_accuracy: 2.0, course: 90.0, source: 'owntracks', raw: {}
+      )
+    end
+
+    it 'returns points without user identity and a 60s cache header' do
+      expect(storage).to receive(:history).with(uid: 'uid1', since: kind_of(String)).and_return([location])
+
+      get '/api/history/uid1/day'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Cache-Control']).to eq('max-age=60, s-maxage=60')
+      body = JSON.parse(last_response.body)
+      expect(body['userid']).to eq('uid1')
+      point = body['points'].first
+      expect(point).to include('latitude' => 1.0, 'longitude' => 2.0, 'altitude' => 30.0, 'speed' => 1.5)
+      expect(point).not_to include('userid', 'name', 'github')
+    end
+  end
+
+  describe 'GET /api/history/:userid/recent' do
+    it 'returns recent points with a 5s cache header' do
+      expect(storage).to receive(:history).with(uid: 'uid1', since: kind_of(String)).and_return([])
+
+      get '/api/history/uid1/recent'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Cache-Control']).to eq('max-age=5, s-maxage=5')
+      expect(JSON.parse(last_response.body)).to eq('userid' => 'uid1', 'points' => [])
+    end
+  end
+
   describe 'GET /api/config' do
     it 'returns the mapbox token' do
       get '/api/config'

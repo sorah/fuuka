@@ -496,6 +496,86 @@ body {
   color: #777;
 }
 
+/* Collapsible header for the history chart; collapsed by default. */
+.fuuka-detail-chart-toggle {
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
+  color: #333;
+  cursor: pointer;
+}
+
+.fuuka-detail-chart-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.fuuka-detail-chart-caret {
+  display: inline-block;
+  transition: transform 0.12s ease;
+  color: #888;
+}
+
+.fuuka-detail-chart-caret.open {
+  transform: rotate(90deg);
+}
+
+/* FR24-style altitude/speed history chart (uPlot), below the current metrics. */
+.fuuka-detail-chart {
+  padding: 0.4rem 0.5rem 0.2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.7rem;
+}
+
+.fuuka-detail-chart .u-legend {
+  font-size: 0.68rem;
+  margin-top: 2px;
+}
+
+.fuuka-detail-chart-ranges {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.fuuka-detail-chart-ranges button {
+  font: inherit;
+  font-size: 0.66rem;
+  flex: 1;
+  padding: 2px 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  color: #444;
+  cursor: pointer;
+}
+
+.fuuka-detail-chart-ranges button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.fuuka-detail-chart-ranges button.active {
+  background: #1d6fe0;
+  border-color: #1559b8;
+  color: #fff;
+}
+
+.fuuka-detail-chart-empty {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
 .fuuka-detail-list {
   margin: 0;
   padding: 0.5rem 0.6rem;

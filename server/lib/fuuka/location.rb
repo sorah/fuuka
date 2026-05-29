@@ -74,10 +74,13 @@ module Fuuka
 
     # Shape returned by GET /api/locations for a single user.
     def as_api(userid:, name:, github: nil)
+      { userid:, name:, github: }.merge(as_point)
+    end
+
+    # Per-reading fields only, without user identity. Used by the history
+    # endpoints, where the user is identified once at the top level.
+    def as_point
       {
-        userid:,
-        name:,
-        github:,
         timestamp:,
         latitude: lat,
         longitude: lon,

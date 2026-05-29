@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'time'
 require 'sinatra/base'
 require 'rack/utils'
 require 'fuuka/storage'
@@ -84,6 +85,18 @@ module Fuuka
         entry[:location].as_api(userid: entry[:userid], name: entry[:name], github: entry[:github])
       end
       json({ users: }, cache: 'max-age=0, s-maxage=1')
+    end
+
+    get '/api/history/:userid/day' do
+      since = (Time.now.utc - 86_400).iso8601
+      points = storage.history(uid: params['userid'], since:).map(&:as_point)
+      json({ userid: params['userid'], points: }, cache: 'max-age=60, s-maxage=60')
+    end
+
+    get '/api/history/:userid/recent' do
+      since = (Time.now.utc - 120).iso8601
+      points = storage.history(uid: params['userid'], since:).map(&:as_point)
+      json({ userid: params['userid'], points: }, cache: 'max-age=5, s-maxage=5')
     end
 
     get '/api/config' do
