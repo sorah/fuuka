@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 
 import { ControlPane } from "~/components/ControlPane";
+import { DetailPane } from "~/components/DetailPane";
 import { LocationMap, type RenderUser } from "~/components/LocationMap";
 import {
   type ConfigResponse,
@@ -18,6 +19,7 @@ export function meta() {
 
 export default function Home() {
   const [config, updateConfig] = useViewConfig();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const visible = usePageVisible();
 
   const { data: mapConfig, error: configError } = useSWR<ConfigResponse>(
@@ -68,6 +70,8 @@ export default function Home() {
   }
 
   const reloadError = locationsError ?? configError;
+  // Resolve against the live list so the detail pane updates as data refreshes.
+  const selectedUser = users.find((u) => u.userid === selectedId) ?? null;
 
   const toggleHidden = (userid: string) =>
     updateConfig({
@@ -92,13 +96,24 @@ export default function Home() {
         users={renderList}
         fitUsers={fitUsers}
         tracking={config.tracking}
-        soloIds={config.solo}
+        selectedId={selectedId}
         onManualInteraction={() =>
           config.tracking && updateConfig({ tracking: false })
         }
-        onHide={toggleHidden}
-        onToggleSolo={toggleSolo}
+        onSelect={setSelectedId}
       />
+      {selectedUser && (
+        <DetailPane
+          user={selectedUser}
+          soloed={config.solo.includes(selectedUser.userid)}
+          onClose={() => setSelectedId(null)}
+          onHide={(userid) => {
+            toggleHidden(userid);
+            setSelectedId(null);
+          }}
+          onToggleSolo={toggleSolo}
+        />
+      )}
       <ControlPane
         users={users}
         config={config}

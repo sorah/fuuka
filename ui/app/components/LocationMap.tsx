@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import Map, { Layer, Marker, Popup, Source } from "react-map-gl/mapbox";
+import Map, { Layer, Marker, Source } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import type { FillLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -28,10 +28,9 @@ type LocationMapProps = {
   users: RenderUser[];
   fitUsers: UserLocation[];
   tracking: boolean;
-  soloIds: string[];
+  selectedId: string | null;
   onManualInteraction: () => void;
-  onHide: (userid: string) => void;
-  onToggleSolo: (userid: string) => void;
+  onSelect: (userid: string | null) => void;
 };
 
 const INITIAL_ZOOM = 9;
@@ -47,16 +46,6 @@ function iconScale(zoom: number): number {
   const t = (zoom - ICON_MIN_ZOOM) / (ICON_MAX_ZOOM - ICON_MIN_ZOOM);
   const clamped = Math.max(0, Math.min(1, t));
   return ICON_SCALE_ZOOMED_OUT + clamped * (ICON_SCALE_ZOOMED_IN - ICON_SCALE_ZOOMED_OUT);
-}
-
-function formatTimestamp(ts: string): string {
-  const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
-}
-
-function formatSpeed(speed: number | null): string | null {
-  if (speed === null) return null;
-  return `${(speed * 3.6).toFixed(1)} km/h`;
 }
 
 // Whether a lon/lat span fits within the current zoom's viewport with margin,
@@ -79,12 +68,10 @@ export function LocationMap({
   users,
   fitUsers,
   tracking,
-  soloIds,
+  selectedId,
   onManualInteraction,
-  onHide,
-  onToggleSolo,
+  onSelect,
 }: LocationMapProps) {
-  const [selected, setSelected] = useState<string | null>(null);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
   const mapRef = useRef<MapRef>(null);
   const wasTracking = useRef(false);
@@ -96,8 +83,6 @@ export function LocationMap({
     [users],
   );
   const circles = useMemo(() => accuracyCircles(undimmed), [undimmed]);
-
-  const active = users.find((u) => u.user.userid === selected)?.user ?? null;
 
   // Key changes whenever the tracked set or their (rounded) positions move.
   const fitKey = useMemo(
@@ -166,6 +151,7 @@ export function LocationMap({
       onZoom={(e) => setZoom(e.viewState.zoom)}
       mapStyle="mapbox://styles/mapbox/streets-v12"
       style={{ position: "absolute", inset: 0 }}
+      onClick={() => onSelect(null)}
       onDragStart={(e) => {
         // Unlock tracking only when the user pans (drag), not on zoom.
         // `originalEvent` is set only for user-initiated gestures; programmatic
@@ -183,6 +169,7 @@ export function LocationMap({
           "fuuka-marker",
           dimmed ? "fuuka-marker--dimmed" : "",
           stale ? "fuuka-marker--stale" : "",
+          user.userid === selectedId ? "fuuka-marker--selected" : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -194,7 +181,7 @@ export function LocationMap({
             anchor="center"
             onClick={(e) => {
               e.originalEvent.stopPropagation();
-              setSelected(user.userid);
+              onSelect(user.userid);
             }}
           >
             <div className={className} title={user.name}>
@@ -227,76 +214,6 @@ export function LocationMap({
           </Marker>
         );
       })}
-
-      {active && (
-        <Popup
-          longitude={active.longitude}
-          latitude={active.latitude}
-          anchor="bottom"
-          offset={12}
-          closeButton
-          closeOnClick
-          onClose={() => setSelected(null)}
-        >
-          <div className="fuuka-popup">
-            <h3>{active.name}</h3>
-            <dl>
-              <dt>Time</dt>
-              <dd>
-                {formatTimestamp(active.timestamp)}
-                {isStale(active.timestamp) ? " (stale)" : ""}
-              </dd>
-              {active.battery !== null && (
-                <>
-                  <dt>Battery</dt>
-                  <dd>
-                    {active.battery}%
-                    {active.batteryState ? ` (${active.batteryState})` : ""}
-                  </dd>
-                </>
-              )}
-              {formatSpeed(active.speed) !== null && (
-                <>
-                  <dt>Speed</dt>
-                  <dd>{formatSpeed(active.speed)}</dd>
-                </>
-              )}
-              {active.altitude !== null && (
-                <>
-                  <dt>Altitude</dt>
-                  <dd>{active.altitude.toFixed(0)} m</dd>
-                </>
-              )}
-              {active.accuracy !== null && (
-                <>
-                  <dt>Accuracy</dt>
-                  <dd>±{active.accuracy.toFixed(0)} m</dd>
-                </>
-              )}
-              <dt>Source</dt>
-              <dd>{active.source}</dd>
-            </dl>
-            <div className="fuuka-popup-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  onHide(active.userid);
-                  setSelected(null);
-                }}
-              >
-                Hide
-              </button>
-              <button
-                type="button"
-                className={soloIds.includes(active.userid) ? "active" : ""}
-                onClick={() => onToggleSolo(active.userid)}
-              >
-                {soloIds.includes(active.userid) ? "Unfocus" : "Focus"}
-              </button>
-            </div>
-          </div>
-        </Popup>
-      )}
     </Map>
   );
 }
