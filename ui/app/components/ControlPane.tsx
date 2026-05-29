@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { UserLocation } from "~/lib/api";
 import type { SoloMode, ViewConfig } from "~/lib/config";
 import { speedColor, speedKmh } from "~/lib/speed";
 import { formatRelative, isStale } from "~/lib/time";
+import { useWakeLock } from "~/lib/wakeLock";
+
+// Delay a single Follow click long enough to tell it apart from a double click.
+const DOUBLE_CLICK_MS = 280;
 
 type ControlPaneProps = {
   users: UserLocation[];
@@ -40,15 +44,47 @@ export function ControlPane({
       window.matchMedia("(max-width: 640px)").matches,
   );
 
+  const wakeLock = useWakeLock();
+  // A single click toggles follow; a double click (double-tap) toggles the
+  // screen wake lock instead, so the pending single action is cancelled.
+  const followClickTimer = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (followClickTimer.current !== null) {
+        window.clearTimeout(followClickTimer.current);
+      }
+    },
+    [],
+  );
+  const handleFollowClick = () => {
+    if (followClickTimer.current !== null) {
+      window.clearTimeout(followClickTimer.current);
+      followClickTimer.current = null;
+      wakeLock.toggle();
+      return;
+    }
+    followClickTimer.current = window.setTimeout(() => {
+      followClickTimer.current = null;
+      onSetTracking(!config.tracking);
+    }, DOUBLE_CLICK_MS);
+  };
+
   const followToggle = (
-    <label className={`fuuka-control-follow${config.tracking ? " active" : ""}`}>
-      <input
-        type="checkbox"
-        checked={config.tracking}
-        onChange={(e) => onSetTracking(e.target.checked)}
-      />
+    <button
+      type="button"
+      className={`fuuka-control-follow${config.tracking ? " active" : ""}${
+        wakeLock.active ? " wake" : ""
+      }`}
+      onClick={handleFollowClick}
+      aria-pressed={config.tracking}
+      title={
+        wakeLock.active
+          ? "Following — screen kept awake (double-tap to release)"
+          : "Follow (double-tap to keep screen awake)"
+      }
+    >
       Follow
-    </label>
+    </button>
   );
 
   if (collapsed) {

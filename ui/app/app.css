@@ -176,8 +176,8 @@ body {
 /* While collapsed the chips are the only controls on screen, so give them a
    comfortable tap target instead of the dense desktop button sizing, and
    restore the drop shadow the (now transparent) container used to provide. */
-.fuuka-control--collapsed .fuuka-control-collapse,
-.fuuka-control--collapsed .fuuka-control-follow {
+.fuuka-control.fuuka-control--collapsed .fuuka-control-collapse,
+.fuuka-control.fuuka-control--collapsed .fuuka-control-follow {
   margin: 0;
   font-size: 0.95rem;
   padding: 10px 16px;
@@ -202,26 +202,32 @@ body {
   gap: 0.25rem;
 }
 
-.fuuka-control-follow {
+/* Scoped under .fuuka-control to outweigh the generic .fuuka-control button
+   styling now that the Follow control is a <button>. */
+.fuuka-control .fuuka-control-follow {
   font-size: 0.72rem;
   padding: 2px 6px;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   background: #fff;
+  color: inherit;
   cursor: pointer;
 }
 
-.fuuka-control-follow:hover {
+.fuuka-control .fuuka-control-follow:hover {
   background: #f0f0f0;
 }
 
-.fuuka-control-follow input {
-  display: none;
-}
-
-.fuuka-control-follow.active {
+.fuuka-control .fuuka-control-follow.active {
   background: #1d6fe0;
   border-color: #1559b0;
+  color: #fff;
+}
+
+/* Screen wake lock held — takes visual precedence over the follow state. */
+.fuuka-control .fuuka-control-follow.wake {
+  background: #1a9e5e;
+  border-color: #15814b;
   color: #fff;
 }
 
