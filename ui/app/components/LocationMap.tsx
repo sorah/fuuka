@@ -34,6 +34,21 @@ type LocationMapProps = {
   onToggleSolo: (userid: string) => void;
 };
 
+const INITIAL_ZOOM = 9;
+
+// Only the icon (arrow/dot) scales with zoom — bigger when zoomed out so it
+// stays visible, smaller when zoomed in. The label+avatar keep their CSS size.
+const ICON_MIN_ZOOM = 8;
+const ICON_MAX_ZOOM = 16;
+const ICON_SCALE_ZOOMED_OUT = 1.6;
+const ICON_SCALE_ZOOMED_IN = 0.9;
+
+function iconScale(zoom: number): number {
+  const t = (zoom - ICON_MIN_ZOOM) / (ICON_MAX_ZOOM - ICON_MIN_ZOOM);
+  const clamped = Math.max(0, Math.min(1, t));
+  return ICON_SCALE_ZOOMED_OUT + clamped * (ICON_SCALE_ZOOMED_IN - ICON_SCALE_ZOOMED_OUT);
+}
+
 function formatTimestamp(ts: string): string {
   const d = new Date(ts);
   return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
@@ -42,6 +57,21 @@ function formatTimestamp(ts: string): string {
 function formatSpeed(speed: number | null): string | null {
   if (speed === null) return null;
   return `${(speed * 3.6).toFixed(1)} km/h`;
+}
+
+// Whether a lon/lat span fits within the current zoom's viewport with margin,
+// i.e. the focused users can stay framed without changing zoom.
+function spanFitsView(
+  map: MapRef,
+  lonSpan: number,
+  latSpan: number,
+): boolean {
+  const bounds = map.getBounds();
+  if (!bounds) return false;
+  const viewLon = bounds.getEast() - bounds.getWest();
+  const viewLat = bounds.getNorth() - bounds.getSouth();
+  // Leave 10% margin on each side so markers don't hug the edge.
+  return lonSpan <= viewLon * 0.8 && latSpan <= viewLat * 0.8;
 }
 
 export function LocationMap({
@@ -55,7 +85,11 @@ export function LocationMap({
   onToggleSolo,
 }: LocationMapProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(INITIAL_ZOOM);
   const mapRef = useRef<MapRef>(null);
+  const wasTracking = useRef(false);
+
+  const icon = iconScale(zoom);
 
   const undimmed = useMemo(
     () => users.filter((u) => !u.dimmed).map((u) => u.user),
@@ -76,15 +110,12 @@ export function LocationMap({
   );
 
   useEffect(() => {
-    if (!tracking || fitUsers.length === 0) return;
-    const map = mapRef.current;
-    if (!map) return;
-
-    if (fitUsers.length === 1) {
-      const u = fitUsers[0];
-      map.easeTo({ center: [u.longitude, u.latitude], zoom: 14, duration: 600 });
+    if (!tracking || fitUsers.length === 0) {
+      wasTracking.current = tracking;
       return;
     }
+    const map = mapRef.current;
+    if (!map) return;
 
     let minLon = Infinity;
     let minLat = Infinity;
@@ -96,6 +127,26 @@ export function LocationMap({
       minLat = Math.min(minLat, u.latitude);
       maxLat = Math.max(maxLat, u.latitude);
     }
+    const center: [number, number] = [
+      (minLon + maxLon) / 2,
+      (minLat + maxLat) / 2,
+    ];
+
+    // Keep the focused users centered as they move, but hold the current zoom
+    // as long as they still fit. Only (re-)pick a zoom when follow is first
+    // engaged or they no longer fit the viewport.
+    const justEngaged = !wasTracking.current;
+    wasTracking.current = true;
+    if (!justEngaged && spanFitsView(map, maxLon - minLon, maxLat - minLat)) {
+      map.easeTo({ center, duration: 600 });
+      return;
+    }
+
+    if (fitUsers.length === 1) {
+      map.easeTo({ center, zoom: 14, duration: 600 });
+      return;
+    }
+
     map.fitBounds(
       [
         [minLon, minLat],
@@ -111,7 +162,8 @@ export function LocationMap({
     <Map
       ref={mapRef}
       mapboxAccessToken={token}
-      initialViewState={{ longitude: 139.767, latitude: 35.681, zoom: 9 }}
+      initialViewState={{ longitude: 139.767, latitude: 35.681, zoom: INITIAL_ZOOM }}
+      onZoom={(e) => setZoom(e.viewState.zoom)}
       mapStyle="mapbox://styles/mapbox/streets-v12"
       style={{ position: "absolute", inset: 0 }}
       onDragStart={(e) => {
@@ -150,13 +202,16 @@ export function LocationMap({
                 <svg
                   className="fuuka-marker-arrow"
                   viewBox="0 0 24 24"
-                  style={{ transform: `rotate(${user.course}deg)` }}
+                  style={{ transform: `rotate(${user.course}deg) scale(${icon})` }}
                   aria-hidden="true"
                 >
                   <path d="M12 2 L19 21 L12 16 L5 21 Z" fill="currentColor" />
                 </svg>
               ) : (
-                <span className="fuuka-marker-dot" />
+                <span
+                  className="fuuka-marker-dot"
+                  style={{ transform: `scale(${icon})` }}
+                />
               )}
               <span className="fuuka-marker-label">
                 {user.github && (

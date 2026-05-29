@@ -46,7 +46,7 @@ body {
 }
 
 .fuuka-marker--dimmed {
-  opacity: 0.3;
+  opacity: 0.1;
 }
 
 .fuuka-marker-arrow {
@@ -147,7 +147,31 @@ body {
 
 .fuuka-control-actions {
   display: flex;
+  align-items: center;
   gap: 0.25rem;
+}
+
+.fuuka-control-follow {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fuuka-control-follow:hover {
+  background: #f0f0f0;
+}
+
+.fuuka-control-follow input {
+  display: none;
+}
+
+.fuuka-control-follow.active {
+  background: #1d6fe0;
+  border-color: #1559b0;
+  color: #fff;
 }
 
 .fuuka-control button {
@@ -170,10 +194,6 @@ body {
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.fuuka-control-toggle {
-  cursor: pointer;
 }
 
 .fuuka-segmented {

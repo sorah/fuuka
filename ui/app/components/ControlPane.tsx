@@ -55,6 +55,16 @@ export function ControlPane({
       <div className="fuuka-control-header">
         <span className="fuuka-control-title">Users ({users.length})</span>
         <div className="fuuka-control-actions">
+          <label
+            className={`fuuka-control-follow${config.tracking ? " active" : ""}`}
+          >
+            <input
+              type="checkbox"
+              checked={config.tracking}
+              onChange={(e) => onSetTracking(e.target.checked)}
+            />
+            Follow
+          </label>
           <button type="button" onClick={onSelectAll}>
             All
           </button>
@@ -72,15 +82,6 @@ export function ControlPane({
         </button>
       </div>
 
-      <label className="fuuka-control-row fuuka-control-toggle">
-        <input
-          type="checkbox"
-          checked={config.tracking}
-          onChange={(e) => onSetTracking(e.target.checked)}
-        />
-        <span>Track {config.tracking ? "(following)" : "(unlocked — pan to follow)"}</span>
-      </label>
-
       {soloActive && (
         <div className="fuuka-control-row fuuka-control-solomode">
           <span>Solo:</span>
@@ -90,7 +91,7 @@ export function ControlPane({
               className={config.soloMode === "gray" ? "active" : ""}
               onClick={() => onSetSoloMode("gray")}
             >
-              Gray
+              Dimmed
             </button>
             <button
               type="button"
