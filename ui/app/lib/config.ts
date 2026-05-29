@@ -47,16 +47,21 @@ export function serializeConfig(config: ViewConfig): string {
   return params.toString();
 }
 
-export function useViewConfig(): [ViewConfig, (patch: Partial<ViewConfig>) => void] {
+type ConfigPatch =
+  | Partial<ViewConfig>
+  | ((prev: ViewConfig) => Partial<ViewConfig>);
+
+export function useViewConfig(): [ViewConfig, (patch: ConfigPatch) => void] {
   const [config, setConfig] = useState<ViewConfig>(() =>
     typeof window === "undefined"
       ? DEFAULT_CONFIG
       : parseConfig(window.location.search),
   );
 
-  const update = useCallback((patch: Partial<ViewConfig>) => {
+  const update = useCallback((patch: ConfigPatch) => {
     setConfig((prev) => {
-      const next = { ...prev, ...patch };
+      const resolved = typeof patch === "function" ? patch(prev) : patch;
+      const next = { ...prev, ...resolved };
       if (typeof window !== "undefined") {
         const query = serializeConfig(next);
         const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;

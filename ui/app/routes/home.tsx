@@ -114,7 +114,9 @@ export default function Home() {
           onUnselectAll={() => updateConfig({ hidden: users.map((u) => u.userid) })}
           onToggleSolo={toggleSolo}
           onClearSolo={() => updateConfig({ solo: [] })}
-          onSetTracking={(tracking) => updateConfig({ tracking })}
+          onToggleTracking={() =>
+            updateConfig((prev) => ({ tracking: !prev.tracking }))
+          }
           onSetSoloMode={(soloMode) => updateConfig({ soloMode })}
         />
         {selectedUser && (

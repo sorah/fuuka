@@ -6,8 +6,10 @@ import { speedColor, speedKmh } from "~/lib/speed";
 import { formatRelative, isStale } from "~/lib/time";
 import { useWakeLock } from "~/lib/wakeLock";
 
-// Delay a single Follow click long enough to tell it apart from a double click.
-const DOUBLE_CLICK_MS = 280;
+// Window for pairing two Follow clicks into a double click. The single click
+// acts immediately, so a generous window costs no latency — it just makes the
+// double-tap (wake-lock toggle) easier to land.
+const DOUBLE_CLICK_MS = 450;
 
 type ControlPaneProps = {
   users: UserLocation[];
@@ -18,7 +20,7 @@ type ControlPaneProps = {
   onUnselectAll: () => void;
   onToggleSolo: (userid: string) => void;
   onClearSolo: () => void;
-  onSetTracking: (tracking: boolean) => void;
+  onToggleTracking: () => void;
   onSetSoloMode: (mode: SoloMode) => void;
   onSelect: (userid: string) => void;
 };
@@ -32,7 +34,7 @@ export function ControlPane({
   onUnselectAll,
   onToggleSolo,
   onClearSolo,
-  onSetTracking,
+  onToggleTracking,
   onSetSoloMode,
   onSelect,
 }: ControlPaneProps) {
@@ -45,8 +47,9 @@ export function ControlPane({
   );
 
   const wakeLock = useWakeLock();
-  // A single click toggles follow; a double click (double-tap) toggles the
-  // screen wake lock instead, so the pending single action is cancelled.
+  // Every click toggles follow immediately (responsive). A double click then
+  // toggles twice — the functional flips cancel out — and additionally toggles
+  // the screen wake lock, so a double-tap leaves follow unchanged.
   const followClickTimer = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -57,6 +60,7 @@ export function ControlPane({
     [],
   );
   const handleFollowClick = () => {
+    onToggleTracking();
     if (followClickTimer.current !== null) {
       window.clearTimeout(followClickTimer.current);
       followClickTimer.current = null;
@@ -65,7 +69,6 @@ export function ControlPane({
     }
     followClickTimer.current = window.setTimeout(() => {
       followClickTimer.current = null;
-      onSetTracking(!config.tracking);
     }, DOUBLE_CLICK_MS);
   };
 
