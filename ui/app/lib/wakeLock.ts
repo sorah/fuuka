@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export type WakeLock = { active: boolean; toggle: () => void };
+
 // Toggleable Screen Wake Lock. The browser drops the lock whenever the page is
 // hidden, so we remember the desired state and re-acquire it on return.
-export function useWakeLock(): { active: boolean; toggle: () => void } {
+export function useWakeLock(): WakeLock {
   const [active, setActive] = useState(false);
   const sentinel = useRef<WakeLockSentinel | null>(null);
   const desired = useRef(false);

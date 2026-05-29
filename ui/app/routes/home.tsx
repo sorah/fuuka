@@ -12,6 +12,7 @@ import {
 } from "~/lib/api";
 import { useViewConfig } from "~/lib/config";
 import { usePageVisible } from "~/lib/visibility";
+import { useWakeLock } from "~/lib/wakeLock";
 
 export function meta() {
   return [{ title: "Fuuka" }];
@@ -22,6 +23,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [framed, setFramed] = useState(false);
   const visible = usePageVisible();
+  const wakeLock = useWakeLock();
 
   const { data: mapConfig, error: configError } = useSWR<ConfigResponse>(
     "/api/config",
@@ -98,9 +100,13 @@ export default function Home() {
         fitUsers={fitUsers}
         tracking={config.tracking}
         selectedId={selectedId}
-        onManualInteraction={() =>
-          config.tracking && updateConfig({ tracking: false })
-        }
+        onManualInteraction={() => {
+          // While the screen is kept awake (Follow held green), a manual pan
+          // shouldn't drop follow — only an explicit Follow toggle does.
+          if (!wakeLock.active && config.tracking) {
+            updateConfig({ tracking: false });
+          }
+        }}
         onSelect={setSelectedId}
         detailOpen={selectedUser !== null}
         onInitialFit={() => setFramed(true)}
@@ -109,6 +115,7 @@ export default function Home() {
         <ControlPane
           users={users}
           config={config}
+          wakeLock={wakeLock}
           selectedId={selectedId}
           onSelect={setSelectedId}
           onToggleHidden={toggleHidden}

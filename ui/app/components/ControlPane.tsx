@@ -4,7 +4,7 @@ import type { UserLocation } from "~/lib/api";
 import type { SoloMode, ViewConfig } from "~/lib/config";
 import { speedColor, speedKmh } from "~/lib/speed";
 import { formatRelative, isStale } from "~/lib/time";
-import { useWakeLock } from "~/lib/wakeLock";
+import type { WakeLock } from "~/lib/wakeLock";
 
 // Window for pairing two Follow clicks into a double click. The single click
 // acts immediately, so a generous window costs no latency — it just makes the
@@ -14,6 +14,7 @@ const DOUBLE_CLICK_MS = 450;
 type ControlPaneProps = {
   users: UserLocation[];
   config: ViewConfig;
+  wakeLock: WakeLock;
   selectedId: string | null;
   onToggleHidden: (userid: string) => void;
   onSelectAll: () => void;
@@ -28,6 +29,7 @@ type ControlPaneProps = {
 export function ControlPane({
   users,
   config,
+  wakeLock,
   selectedId,
   onToggleHidden,
   onSelectAll,
@@ -46,7 +48,6 @@ export function ControlPane({
       window.matchMedia("(max-width: 640px)").matches,
   );
 
-  const wakeLock = useWakeLock();
   // Every click toggles follow immediately (responsive). A double click then
   // toggles twice — the functional flips cancel out — and additionally toggles
   // the screen wake lock, so a double-tap leaves follow unchanged.
