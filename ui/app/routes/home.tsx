@@ -102,29 +102,31 @@ export default function Home() {
         }
         onSelect={setSelectedId}
       />
-      {selectedUser && (
-        <DetailPane
-          user={selectedUser}
-          soloed={config.solo.includes(selectedUser.userid)}
-          onClose={() => setSelectedId(null)}
-          onHide={(userid) => {
-            toggleHidden(userid);
-            setSelectedId(null);
-          }}
+      <div className="fuuka-panes">
+        <ControlPane
+          users={users}
+          config={config}
+          onToggleHidden={toggleHidden}
+          onSelectAll={() => updateConfig({ hidden: [] })}
+          onUnselectAll={() => updateConfig({ hidden: users.map((u) => u.userid) })}
           onToggleSolo={toggleSolo}
+          onClearSolo={() => updateConfig({ solo: [] })}
+          onSetTracking={(tracking) => updateConfig({ tracking })}
+          onSetSoloMode={(soloMode) => updateConfig({ soloMode })}
         />
-      )}
-      <ControlPane
-        users={users}
-        config={config}
-        onToggleHidden={toggleHidden}
-        onSelectAll={() => updateConfig({ hidden: [] })}
-        onUnselectAll={() => updateConfig({ hidden: users.map((u) => u.userid) })}
-        onToggleSolo={toggleSolo}
-        onClearSolo={() => updateConfig({ solo: [] })}
-        onSetTracking={(tracking) => updateConfig({ tracking })}
-        onSetSoloMode={(soloMode) => updateConfig({ soloMode })}
-      />
+        {selectedUser && (
+          <DetailPane
+            user={selectedUser}
+            soloed={config.solo.includes(selectedUser.userid)}
+            onClose={() => setSelectedId(null)}
+            onHide={(userid) => {
+              toggleHidden(userid);
+              setSelectedId(null);
+            }}
+            onToggleSolo={toggleSolo}
+          />
+        )}
+      </div>
       {reloadError && (
         <div
           className="fuuka-warning"
