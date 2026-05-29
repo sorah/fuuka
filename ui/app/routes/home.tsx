@@ -101,6 +101,7 @@ export default function Home() {
           config.tracking && updateConfig({ tracking: false })
         }
         onSelect={setSelectedId}
+        detailOpen={selectedUser !== null}
       />
       <div className="fuuka-panes">
         <ControlPane

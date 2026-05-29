@@ -29,9 +29,38 @@ type LocationMapProps = {
   fitUsers: UserLocation[];
   tracking: boolean;
   selectedId: string | null;
+  detailOpen: boolean;
   onManualInteraction: () => void;
   onSelect: (userid: string | null) => void;
 };
+
+type Padding = { top: number; right: number; bottom: number; left: number };
+
+// Inset the camera by however much the floating panes cover, so followed users
+// are framed in the visible area rather than hidden behind the panes. The panes
+// are fixed-positioned, so their viewport rects map directly to map padding.
+function paddingForPanes(): Padding {
+  const base = 60;
+  const pad: Padding = { top: base, right: base, bottom: base, left: base };
+  if (typeof window === "undefined") return pad;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  for (const sel of [".fuuka-panes", ".fuuka-detail"]) {
+    const el = document.querySelector(sel);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    // Add the covered span on whichever edge the pane hugs.
+    if (vw - r.right < r.left && vw - r.right < 40) {
+      pad.right = Math.max(pad.right, vw - r.left + 12);
+    }
+    if (vh - r.bottom < r.top && vh - r.bottom < 40) {
+      pad.bottom = Math.max(pad.bottom, vh - r.top + 12);
+    }
+  }
+  return pad;
+}
 
 const INITIAL_ZOOM = 9;
 
@@ -63,17 +92,23 @@ function speedColor(speed: number | null): string {
   return `hsl(${Math.round(hue)}, 77%, 50%)`;
 }
 
-// Whether a lon/lat span fits within the current zoom's viewport with margin,
-// i.e. the focused users can stay framed without changing zoom.
+// Whether a lon/lat span fits within the part of the viewport the panes leave
+// visible, i.e. the focused users can stay framed without changing zoom.
 function spanFitsView(
   map: MapRef,
   lonSpan: number,
   latSpan: number,
+  padding: Padding,
 ): boolean {
   const bounds = map.getBounds();
   if (!bounds) return false;
-  const viewLon = bounds.getEast() - bounds.getWest();
-  const viewLat = bounds.getNorth() - bounds.getSouth();
+  const container = map.getContainer();
+  const cw = container.clientWidth || 1;
+  const ch = container.clientHeight || 1;
+  const fracX = Math.max(0.1, (cw - padding.left - padding.right) / cw);
+  const fracY = Math.max(0.1, (ch - padding.top - padding.bottom) / ch);
+  const viewLon = (bounds.getEast() - bounds.getWest()) * fracX;
+  const viewLat = (bounds.getNorth() - bounds.getSouth()) * fracY;
   // Leave 10% margin on each side so markers don't hug the edge.
   return lonSpan <= viewLon * 0.8 && latSpan <= viewLat * 0.8;
 }
@@ -84,6 +119,7 @@ export function LocationMap({
   fitUsers,
   tracking,
   selectedId,
+  detailOpen,
   onManualInteraction,
   onSelect,
 }: LocationMapProps) {
@@ -132,18 +168,25 @@ export function LocationMap({
       (minLat + maxLat) / 2,
     ];
 
+    // Offset the camera by whatever the floating panes cover so the focused
+    // users stay framed in the visible area, not behind a pane.
+    const padding = paddingForPanes();
+
     // Keep the focused users centered as they move, but hold the current zoom
     // as long as they still fit. Only (re-)pick a zoom when follow is first
     // engaged or they no longer fit the viewport.
     const justEngaged = !wasTracking.current;
     wasTracking.current = true;
-    if (!justEngaged && spanFitsView(map, maxLon - minLon, maxLat - minLat)) {
-      map.easeTo({ center, duration: 600 });
+    if (
+      !justEngaged &&
+      spanFitsView(map, maxLon - minLon, maxLat - minLat, padding)
+    ) {
+      map.easeTo({ center, padding, duration: 600 });
       return;
     }
 
     if (fitUsers.length === 1) {
-      map.easeTo({ center, zoom: 14, duration: 600 });
+      map.easeTo({ center, zoom: 14, padding, duration: 600 });
       return;
     }
 
@@ -152,11 +195,12 @@ export function LocationMap({
         [minLon, minLat],
         [maxLon, maxLat],
       ],
-      { padding: 80, maxZoom: 15, duration: 600 },
+      { padding, maxZoom: 15, duration: 600 },
     );
     // fitKey captures position changes; depending on it keeps the view following.
+    // detailOpen changes the panes' footprint, so re-frame when it toggles.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tracking, fitKey]);
+  }, [tracking, fitKey, detailOpen]);
 
   return (
     <Map
