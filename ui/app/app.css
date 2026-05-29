@@ -1,0 +1,313 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#root {
+  height: 100vh;
+}
+
+.fuuka-map {
+  position: absolute;
+  inset: 0;
+}
+
+.fuuka-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.fuuka-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  color: #1d6fe0;
+  cursor: pointer;
+}
+
+.fuuka-marker--stale {
+  color: #e0341d;
+}
+
+.fuuka-marker--dimmed {
+  opacity: 0.3;
+}
+
+.fuuka-marker-arrow {
+  display: block;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+  transform-origin: 50% 50%;
+}
+
+.fuuka-marker-dot {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: currentColor;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.fuuka-marker-label {
+  position: absolute;
+  /* Sit above the marker (Google Maps style), centered horizontally. */
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  color: #111;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+/* When present, the avatar is the primary identifier — enlarge it and keep the
+   name aligned vertically beside it. */
+.fuuka-marker-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.fuuka-control {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  width: 260px;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  font-size: 0.8rem;
+  color: #111;
+  overflow: hidden;
+}
+
+.fuuka-control--collapsed {
+  width: auto;
+}
+
+.fuuka-control-collapse {
+  font-weight: 700;
+}
+
+.fuuka-control--collapsed .fuuka-control-collapse {
+  margin: 0;
+}
+
+.fuuka-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.fuuka-control-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.fuuka-control button {
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fuuka-control button:hover {
+  background: #f0f0f0;
+}
+
+.fuuka-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.fuuka-control-toggle {
+  cursor: pointer;
+}
+
+.fuuka-segmented {
+  display: inline-flex;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fuuka-segmented button {
+  border: none;
+  border-radius: 0;
+  padding: 2px 8px;
+}
+
+.fuuka-segmented button.active {
+  background: #1d6fe0;
+  color: #fff;
+}
+
+.fuuka-control-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.fuuka-control-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.fuuka-control-user {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.fuuka-control-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fuuka-control-time {
+  margin-left: auto;
+  color: #777;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.fuuka-control-time.stale {
+  color: #e0341d;
+  font-weight: 600;
+}
+
+.fuuka-solo-button {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  font-weight: 700;
+}
+
+.fuuka-solo-button.active {
+  background: #f0a500;
+  border-color: #c98a00;
+  color: #fff;
+}
+
+.fuuka-warning {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7a4a00;
+  background: rgba(255, 240, 200, 0.95);
+  border: 1px solid #e0a300;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  cursor: help;
+}
+
+.fuuka-popup h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.fuuka-popup dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.fuuka-popup dt {
+  color: #666;
+}
+
+.fuuka-popup dd {
+  margin: 0;
+}
+
+.fuuka-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fuuka-popup-actions button {
+  flex: 1;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fuuka-popup-actions button:hover {
+  background: #f0f0f0;
+}
+
+.fuuka-popup-actions button.active {
+  background: #f0a500;
+  border-color: #c98a00;
+  color: #fff;
+}
