@@ -40,23 +40,23 @@ export default function Home() {
   );
 
   const { renderList, fitUsers } = useMemo(() => {
-    const soloActive = config.solo.length > 0;
-    const focused = (u: UserLocation) =>
-      !soloActive || config.solo.includes(u.userid);
-    const visible = users.filter((u) => !config.hidden.includes(u.userid));
-
-    const fit = soloActive ? visible.filter(focused) : visible;
-
-    let render: RenderUser[];
-    if (soloActive && config.soloMode === "hide") {
-      render = visible.filter(focused).map((user) => ({ user, dimmed: false }));
-    } else {
-      render = visible.map((user) => ({
-        user,
-        dimmed: soloActive && !focused(user),
-      }));
+    // Solo focuses an explicit set of users and ignores hidden state, so a
+    // soloed user still shows even if it was hidden.
+    if (config.solo.length > 0) {
+      const focused = (u: UserLocation) => config.solo.includes(u.userid);
+      const fit = users.filter(focused);
+      const render: RenderUser[] =
+        config.soloMode === "hide"
+          ? fit.map((user) => ({ user, dimmed: false }))
+          : users.map((user) => ({ user, dimmed: !focused(user) }));
+      return { renderList: render, fitUsers: fit };
     }
-    return { renderList: render, fitUsers: fit };
+
+    const visible = users.filter((u) => !config.hidden.includes(u.userid));
+    return {
+      renderList: visible.map((user) => ({ user, dimmed: false })),
+      fitUsers: visible,
+    };
   }, [users, config]);
 
   // Only block the whole screen before we have ever loaded a map token; after
