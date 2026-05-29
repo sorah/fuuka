@@ -67,6 +67,18 @@ export function DetailPane({
           <span className="fuuka-detail-name">{user.name}</span>
           <span className="fuuka-detail-sub">{user.source}</span>
         </div>
+        <div className="fuuka-detail-actions">
+          <button type="button" onClick={() => onHide(user.userid)}>
+            Hide
+          </button>
+          <button
+            type="button"
+            className={soloed ? "active" : ""}
+            onClick={() => onToggleSolo(user.userid)}
+          >
+            {soloed ? "Unfocus" : "Focus"}
+          </button>
+        </div>
         <button
           type="button"
           className="fuuka-detail-close"
@@ -114,19 +126,6 @@ export function DetailPane({
           </>
         )}
       </dl>
-
-      <div className="fuuka-detail-actions">
-        <button type="button" onClick={() => onHide(user.userid)}>
-          Hide
-        </button>
-        <button
-          type="button"
-          className={soloed ? "active" : ""}
-          onClick={() => onToggleSolo(user.userid)}
-        >
-          {soloed ? "Unfocus" : "Focus"}
-        </button>
-      </div>
     </div>
   );
 }

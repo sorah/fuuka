@@ -506,26 +506,26 @@ body {
   font-weight: 600;
 }
 
+/* Compact action group living in the dark header, left of the close button. */
 .fuuka-detail-actions {
   display: flex;
   gap: 6px;
-  padding: 0.5rem 0.6rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  flex: none;
 }
 
 .fuuka-detail-actions button {
-  flex: 1;
   font: inherit;
-  font-size: 0.78rem;
-  padding: 4px 8px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
   cursor: pointer;
 }
 
 .fuuka-detail-actions button:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .fuuka-detail-actions button.active {
