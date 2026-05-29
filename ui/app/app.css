@@ -128,6 +128,13 @@ body {
   pointer-events: none;
 }
 
+/* Roomier panes on desktop, where there's space to spare. */
+@media (min-width: 641px) {
+  .fuuka-panes {
+    width: 340px;
+  }
+}
+
 .fuuka-panes > * {
   pointer-events: auto;
 }
