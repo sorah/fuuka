@@ -145,8 +145,16 @@ body {
   overflow: hidden;
 }
 
+/* Collapsed: a row of floating chips (Follow + the Users pill) rather than a
+   single boxed pane, so the container chrome doesn't wrap them. */
 .fuuka-control--collapsed {
   width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .fuuka-control-title {
@@ -158,13 +166,18 @@ body {
   font-weight: 700;
 }
 
-/* While collapsed the pill is the only control on screen, so give it a
-   comfortable tap target instead of the dense desktop button sizing. */
-.fuuka-control--collapsed .fuuka-control-collapse {
+/* While collapsed the chips are the only controls on screen, so give them a
+   comfortable tap target instead of the dense desktop button sizing, and
+   restore the drop shadow the (now transparent) container used to provide. */
+.fuuka-control--collapsed .fuuka-control-collapse,
+.fuuka-control--collapsed .fuuka-control-follow {
   margin: 0;
   font-size: 0.95rem;
   padding: 10px 16px;
   min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
 .fuuka-control-header {

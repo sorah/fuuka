@@ -40,9 +40,21 @@ export function ControlPane({
       window.matchMedia("(max-width: 640px)").matches,
   );
 
+  const followToggle = (
+    <label className={`fuuka-control-follow${config.tracking ? " active" : ""}`}>
+      <input
+        type="checkbox"
+        checked={config.tracking}
+        onChange={(e) => onSetTracking(e.target.checked)}
+      />
+      Follow
+    </label>
+  );
+
   if (collapsed) {
     return (
       <div className="fuuka-control fuuka-control--collapsed">
+        {followToggle}
         <button
           type="button"
           className="fuuka-control-collapse"
@@ -60,16 +72,7 @@ export function ControlPane({
       <div className="fuuka-control-header">
         <span className="fuuka-control-title">Users ({users.length})</span>
         <div className="fuuka-control-actions">
-          <label
-            className={`fuuka-control-follow${config.tracking ? " active" : ""}`}
-          >
-            <input
-              type="checkbox"
-              checked={config.tracking}
-              onChange={(e) => onSetTracking(e.target.checked)}
-            />
-            Follow
-          </label>
+          {followToggle}
           <button type="button" onClick={onSelectAll}>
             All
           </button>
