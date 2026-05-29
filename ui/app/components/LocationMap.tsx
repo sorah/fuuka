@@ -48,6 +48,21 @@ function iconScale(zoom: number): number {
   return ICON_SCALE_ZOOMED_OUT + clamped * (ICON_SCALE_ZOOMED_IN - ICON_SCALE_ZOOMED_OUT);
 }
 
+// Live markers ramp from blue (stationary) to red (fast); fully red at 140km/h.
+// Interpolate the HSL hue the short way (blue→purple→magenta→red) rather than
+// RGB, which would pass through a muddy gray and make slow markers look dull.
+// Going via 360° avoids the green/yellow detour the 215→7 direction would take.
+const SPEED_FULL_RED_KMH = 140;
+const HUE_SLOW = 215; // ~#1d6fe0 blue
+const HUE_FAST = 360; // red (== 0°)
+
+function speedColor(speed: number | null): string {
+  const kmh = speed === null ? 0 : speed * 3.6;
+  const t = Math.max(0, Math.min(1, kmh / SPEED_FULL_RED_KMH));
+  const hue = HUE_SLOW + (HUE_FAST - HUE_SLOW) * t;
+  return `hsl(${Math.round(hue)}, 77%, 50%)`;
+}
+
 // Whether a lon/lat span fits within the current zoom's viewport with margin,
 // i.e. the focused users can stay framed without changing zoom.
 function spanFitsView(
@@ -184,7 +199,12 @@ export function LocationMap({
               onSelect(user.userid);
             }}
           >
-            <div className={className} title={user.name}>
+            <div
+              className={className}
+              title={user.name}
+              // Stale markers keep their CSS color; live ones ramp with speed.
+              style={stale ? undefined : { color: speedColor(user.speed) }}
+            >
               {user.course !== null ? (
                 <svg
                   className="fuuka-marker-arrow"
